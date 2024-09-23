@@ -256,6 +256,7 @@ opts.Add(BoolVariable("vsproj", "Generate a Visual Studio solution", False))
 opts.Add("vsproj_name", "Name of the Visual Studio solution", "godot")
 opts.Add("import_env_vars", "A comma-separated list of environment variables to copy from the outer environment.", "")
 opts.Add(BoolVariable("disable_3d", "Disable 3D nodes for a smaller executable", False))
+opts.Add(BoolVariable("disable_movie_writer", "Disable MovieWriter for a smaller executable", False))
 opts.Add(BoolVariable("disable_advanced_gui", "Disable advanced GUI nodes and behaviors", False))
 opts.Add("build_profile", "Path to a file containing a feature build profile", "")
 opts.Add(BoolVariable("modules_enabled_by_default", "If no, disable all modules except ones explicitly enabled", True))
@@ -998,6 +999,12 @@ if env["disable_3d"]:
         Exit(255)
     else:
         env.Append(CPPDEFINES=["_3D_DISABLED"])
+if env["disable_movie_writer"]:
+    if env.editor_build:
+        print_error("Build option `disable_movie_writer=yes` cannot be used for editor builds, only for export template builds.")
+        Exit(255)
+    else:
+        env.Append(CPPDEFINES=["_MOVIE_WRITER_DISABLED"])
 if env["disable_advanced_gui"]:
     if env.editor_build:
         print_error(

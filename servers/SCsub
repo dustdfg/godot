@@ -20,10 +20,12 @@ SConscript("camera/SCsub")
 SConscript("debugger/SCsub")
 SConscript("display/SCsub")
 SConscript("extensions/SCsub")
-SConscript("movie_writer/SCsub")
 SConscript("navigation/SCsub")
 SConscript("rendering/SCsub")
 SConscript("text/SCsub")
+
+if not env["disable_movie_writer"]:
+    SConscript("movie_writer/SCsub")
 
 SConscript("physics_2d/SCsub")
 
