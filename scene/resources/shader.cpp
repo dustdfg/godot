@@ -171,15 +171,24 @@ void Shader::get_shader_uniform_list(List<PropertyInfo> *p_params, bool p_get_gr
 				DocData::PropertyDoc prop_doc;
 				prop_doc.name = "shader_parameter/" + pi.name;
 #ifdef MODULE_REGEX_ENABLED
-				const RegEx pattern("/\\*\\*\\s([^*]|[\\r\\n]|(\\*+([^*/]|[\\r\\n])))*\\*+/\\s*uniform\\s+\\w+\\s+" + pi.name + "(?=[\\s:;=])");
-				Ref<RegExMatch> pattern_ref = pattern.search(code);
-				if (pattern_ref.is_valid()) {
-					RegExMatch *match = pattern_ref.ptr();
-					const RegEx pattern_tip("\\/\\*\\*([\\s\\S]*?)\\*/");
-					Ref<RegExMatch> pattern_tip_ref = pattern_tip.search(match->get_string(0));
-					RegExMatch *match_tip = pattern_tip_ref.ptr();
-					const RegEx pattern_stripped("\\n\\s*\\*\\s*");
-					prop_doc.description = pattern_stripped.sub(match_tip->get_string(1), "\n", true);
+				String path = get_path();
+				if (path.is_empty()) {
+					path = include_path;
+				}
+				String pp_code;
+				ShaderPreprocessor pp;
+				Error result = pp.preprocess(code, path, pp_code, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, true);
+				if (result == OK) {
+					const RegEx pattern("/\\*\\*\\s([^*]|[\\r\\n]|(\\*+([^*/]|[\\r\\n])))*\\*+/\\s*uniform\\s+\\w+\\s+" + pi.name + "(?=[\\s:;=])");
+					Ref<RegExMatch> pattern_ref = pattern.search(pp_code);
+					if (pattern_ref.is_valid()) {
+						RegExMatch *match = pattern_ref.ptr();
+						const RegEx pattern_tip("\\/\\*\\*([\\s\\S]*?)\\*/");
+						Ref<RegExMatch> pattern_tip_ref = pattern_tip.search(match->get_string(0));
+						RegExMatch *match_tip = pattern_tip_ref.ptr();
+						const RegEx pattern_stripped("\\n\\s*\\*\\s*");
+						prop_doc.description = pattern_stripped.sub(match_tip->get_string(1), "\n", true);
+					}
 				}
 #endif
 				class_doc.properties.push_back(prop_doc);

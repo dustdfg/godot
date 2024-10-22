@@ -744,7 +744,12 @@ void ShaderPreprocessor::process_include(Tokenizer *p_tokenizer) {
 	state->include_positions.push_back(fp);
 
 	String result;
+// Don't strip comments in editor to create docs
+#ifdef TOOLS_ENABLED
+	processor.preprocess(state, included, result, false);
+#else
 	processor.preprocess(state, included, result);
+#endif
 	add_to_output("@@>" + real_path + "\n"); // Add token for enter include path
 	add_to_output(result);
 	add_to_output("\n@@<" + real_path + "\n"); // Add token for exit include path.
@@ -1224,24 +1229,27 @@ void ShaderPreprocessor::clear_state() {
 	state = nullptr;
 }
 
-Error ShaderPreprocessor::preprocess(State *p_state, const String &p_code, String &r_result) {
+Error ShaderPreprocessor::preprocess(State *p_state, const String &p_code, String &r_result, bool p_remove_comments) {
 	output.clear();
 
 	state = p_state;
 
-	CommentRemover remover(p_code);
-	String stripped = remover.strip();
-	String error = remover.get_error();
-	if (!error.is_empty()) {
-		set_error(error, remover.get_error_line());
-		return FAILED;
+	String _p_code = p_code;
+	if (p_remove_comments) {
+		CommentRemover remover(p_code);
+		_p_code = remover.strip();
+		String error = remover.get_error();
+		if (!error.is_empty()) {
+			set_error(error, remover.get_error_line());
+			return FAILED;
+		}
 	}
 
 	// Track code hashes to prevent cyclic include.
 	uint64_t code_hash = p_code.hash64();
 	state->cyclic_include_hashes.push_back(code_hash);
 
-	Tokenizer p_tokenizer(stripped);
+	Tokenizer p_tokenizer(_p_code);
 	int last_size = 0;
 	bool has_symbols_before_directive = false;
 
@@ -1301,13 +1309,13 @@ Error ShaderPreprocessor::preprocess(State *p_state, const String &p_code, Strin
 	return OK;
 }
 
-Error ShaderPreprocessor::preprocess(const String &p_code, const String &p_filename, String &r_result, String *r_error_text, List<FilePosition> *r_error_position, List<Region> *r_regions, HashSet<Ref<ShaderInclude>> *r_includes, List<ScriptLanguage::CodeCompletionOption> *r_completion_options, List<ScriptLanguage::CodeCompletionOption> *r_completion_defines, IncludeCompletionFunction p_include_completion_func) {
+Error ShaderPreprocessor::preprocess(const String &p_code, const String &p_filename, String &r_result, String *r_error_text, List<FilePosition> *r_error_position, List<Region> *r_regions, HashSet<Ref<ShaderInclude>> *r_includes, List<ScriptLanguage::CodeCompletionOption> *r_completion_options, List<ScriptLanguage::CodeCompletionOption> *r_completion_defines, IncludeCompletionFunction p_include_completion_func, bool p_remove_comments) {
 	State pp_state;
 	if (!p_filename.is_empty()) {
 		pp_state.current_filename = p_filename;
 		pp_state.save_regions = r_regions != nullptr;
 	}
-	Error err = preprocess(&pp_state, p_code, r_result);
+	Error err = preprocess(&pp_state, p_code, r_result, p_remove_comments);
 	if (err != OK) {
 		if (r_error_text) {
 			*r_error_text = pp_state.error;
