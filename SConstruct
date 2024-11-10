@@ -95,7 +95,8 @@ platform_apis = []
 time_at_start = time.time()
 
 for x in sorted(glob.glob("platform/*")):
-    if not os.path.isdir(x) or not os.path.exists(x + "/detect.py"):
+    if not os.path.exists(x + "/detect.py"):
+        print(x + "/detect.py")
         continue
     tmppath = "./" + x
 
@@ -112,7 +113,7 @@ for x in sorted(glob.glob("platform/*")):
         pass
 
     platform_name = x[9:]
-
+    print("platform_name: '" + platform_name + "'")
     if os.path.exists(x + "/export/export.cpp"):
         platform_exporters.append(platform_name)
     if os.path.exists(x + "/api/api.cpp"):
@@ -120,6 +121,7 @@ for x in sorted(glob.glob("platform/*")):
     if detect.can_build():
         x = x.replace("platform/", "")  # rest of world
         x = x.replace("platform\\", "")  # win32
+        print("x: '" + x + "'")
         platform_list += [x]
         platform_opts[x] = detect.get_opts()
         platform_flags[x] = detect.get_flags()
