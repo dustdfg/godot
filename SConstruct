@@ -462,6 +462,8 @@ Help(opts.GenerateHelpText(env))
 
 env.Prepend(CPPPATH=["#"])
 
+print_error(Dir("#thirdparty/brotli/common").get_abspath())
+Exit(255)
 # configure ENV for platform
 env.platform_exporters = platform_exporters
 env.platform_apis = platform_apis
